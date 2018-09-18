@@ -1,0 +1,6 @@
+*.log
+__pychache__
+checkpoint
+resources
+outliers.txt
+resources
