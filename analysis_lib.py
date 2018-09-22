@@ -16,12 +16,12 @@ cur = conn.cursor()
 
 class Day:
     def __init__(self, vec, source, name, num, week, date):
-        self.vec = vec
-        self.source = source
-        self.name = name
-        self.num = num
-        self.week = week
-        self.date = date
+        self.vec = vec # 24D representational vector
+        self.source = source # Number of data source
+        self.name = name # String representation
+        self.num = num # number of day of the week
+        self.week = week # number of week of the year
+        self.date = date # date
 
     def __repr__(self):
         return f'{self.name}'
@@ -35,7 +35,7 @@ def daynum(s):
 
 points = []
 
-
+# Read in data points from SQL table
 def process_table(table, col, cat, year):
     query = f"""
             SELECT STRFTIME('%w %W', {col}),
@@ -62,6 +62,7 @@ def process_table(table, col, cat, year):
         data = [data[j] if j in data else 0 for j in range(24)]
         points.append(Day(np.array(data), cat, f'{daynum(num)} #{week}', num, week, date))
 
+# Read in subway data points from subway SQL table
 def process_subways_table(table, col, cat, year):
     query = f"""
             SELECT STRFTIME('%w %W', {col}),
@@ -91,7 +92,7 @@ def process_subways_table(table, col, cat, year):
         data = [data[j] if j in data else 0 for j in range(24)]
         points.append(Day(np.array(data), cat, f'{daynum(num)} #{week}', num, week, date))
 
-
+# Get data for a day
 def query_day(table, col, year, day, week):
     query = f"""
             SELECT STRFTIME('%H',{col}), COUNT(*)
@@ -107,23 +108,26 @@ def query_day(table, col, year, day, week):
     return data
 
 
-
+# Normalize vector safely
 def norm(v):
     s = np.sum(v)
     return v / s if s > 0 else norm(np.ones(v.shape, np.float64))
 
 
+# Hellinger distance between distributions
 def hellinger(x, y):
     nx = norm(x)
     ny = norm(y)
     return sqrt(max((0, 1 - np.sum(sqrt(i * j) for i, j in zip(nx, ny)))))
 
-
+# Global list of day objects to use
 points = []
 
+# Read in accident and subway data
 process_table("accidents", "time", 0, 2015)
 process_subways_table("subways", "time", 1, 2016)
 
+# Convolve subway data with kernel [.2 .2 .2 .2 .2] due to low data granularity
 def squash(vec):
     new = np.zeros(vec.shape)
     for i, v in enumerate(vec):
@@ -132,10 +136,11 @@ def squash(vec):
                 new[j] += v / 5
     return new
 
-
 for day in points:
     if day.source == 1:
         day.vec = squash(day.vec)
+        
+# Read in sound and taxi data
 process_table("call311", "made", 2, 2014)
 process_table("taxis", "pickup_datetime", 3, 2014)
 

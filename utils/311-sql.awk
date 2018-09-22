@@ -1,9 +1,10 @@
 BEGIN {
+    sql = "sqlite3 resources/data.db"
     FS = ","
     OFS = ","
-    print "DROP TABLE Call311;"
-    print "CREATE TABLE Call311(made timetamp, resolved timestamp, latitude double, longitude double, complaint text);"
-    print "BEGIN TRANSACTION;"
+    print "DROP TABLE Call311;" | sql
+    print "CREATE TABLE Call311(made timetamp, resolved timestamp, latitude double, longitude double, complaint text);" | sql
+    print "BEGIN TRANSACTION;" | sql
 }
 
 function parse(time) {
@@ -12,9 +13,9 @@ function parse(time) {
 }
 
 NR > 1 && $1 ~! "^$" && $2 ~! "^$" && $39 ~! "^$"&&  $40 ~! "^$" {
-    print "INSERT INTO Call311 VALUES(" parse($2), parse($3), $39, $40, "\"" $6 "\""");"
+    print "INSERT INTO Call311 VALUES(" parse($2), parse($3), $39, $40, "\"" $6 "\""");" | sql
 }
 
 END {
-    print "COMMIT;"
+    print "COMMIT;" | sql
 }
